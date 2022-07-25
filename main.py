@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from pathlib import Path
 from utils import working_directory, assert_eq
 
@@ -110,4 +111,21 @@ if __name__ == '__main__':
                 changed_files={Path('file2.txt')},
             ),
             'Single changed file',
+        )
+
+    with working_directory() as work_dir:
+        (work_dir / 'file1.txt').write_text('hello')
+        (work_dir / 'file2.txt').write_text('world')
+        os.utime((work_dir / 'file2.txt'), (1, 1))
+        snapshot1 = DirectorySnapshot(work_dir)
+        (work_dir / 'file2.txt').write_text('blurp')
+        os.utime((work_dir / 'file2.txt'), (1, 1))
+        snapshot2 = DirectorySnapshot(work_dir)
+
+        assert_eq(
+            snapshot1.diff(snapshot2),
+            Difference(
+                changed_files={Path('file2.txt')},
+            ),
+            'Changed content',
         )
